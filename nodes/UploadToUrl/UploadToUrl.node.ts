@@ -10,7 +10,7 @@ export class UploadToUrl implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Upload to URL',
 		name: 'uploadToUrl',
-		icon: { light: 'file:upload-to-url.png', dark: 'file:upload-to-url.png' },
+		icon: 'file:upload-to-url.svg',
 		group: ['output'],
 		version: 1,
 		subtitle: 'File Upload & Hosting',
@@ -38,7 +38,7 @@ export class UploadToUrl implements INodeType {
 						name: 'Upload File',
 						value: 'upload',
 						description: 'Upload a file (binary data or base64) and get a public URL',
-						action: 'Upload a File',
+						action: 'Upload a file',
 					},
 				],
 				default: 'upload',
@@ -113,45 +113,58 @@ export class UploadToUrl implements INodeType {
 				},
 				options: [
 					{
-						name: 'Auto-detect from filename',
+						name: 'Auto-Detect From Filename',
 						value: 'auto',
 						description: 'Automatically detect MIME type from file extension',
-					},
-					{
-						name: 'JPEG Image',
-						value: 'image/jpeg',
-					},
-					{
-						name: 'PNG Image',
-						value: 'image/png',
-					},
-					{
-						name: 'GIF Image',
-						value: 'image/gif',
-					},
-					{
-						name: 'WebP Image',
-						value: 'image/webp',
-					},
-					{
-						name: 'SVG Image',
-						value: 'image/svg+xml',
-					},
-					{
-						name: 'PDF Document',
-						value: 'application/pdf',
-					},
-					{
-						name: 'Text File',
-						value: 'text/plain',
 					},
 					{
 						name: 'CSV File',
 						value: 'text/csv',
 					},
 					{
+						name: 'Custom',
+						value: 'custom',
+						description: 'Specify a custom MIME type',
+					},
+					{
+						name: 'GIF Image',
+						value: 'image/gif',
+					},
+					{
+						name: 'JPEG Image',
+						value: 'image/jpeg',
+					},
+					{
 						name: 'JSON File',
 						value: 'application/json',
+					},
+					{
+						name: 'MP3 Audio',
+						value: 'audio/mpeg',
+					},
+					{
+						name: 'MP4 Video',
+						value: 'video/mp4',
+					},
+					{
+						name: 'PDF Document',
+						value: 'application/pdf',
+					},
+					{
+						name: 'PNG Image',
+						value: 'image/png',
+					},
+					{
+						name: 'SVG Image',
+						value: 'image/svg+xml',
+					},
+					{
+						name: 'Text File',
+						value: 'text/plain',
+					},
+					{
+						name: 'WebP Image',
+						value: 'image/webp',
 					},
 					{
 						name: 'XML File',
@@ -160,19 +173,6 @@ export class UploadToUrl implements INodeType {
 					{
 						name: 'ZIP Archive',
 						value: 'application/zip',
-					},
-					{
-						name: 'MP4 Video',
-						value: 'video/mp4',
-					},
-					{
-						name: 'MP3 Audio',
-						value: 'audio/mpeg',
-					},
-					{
-						name: 'Custom',
-						value: 'custom',
-						description: 'Specify a custom MIME type',
 					},
 				],
 				required: true,
@@ -217,7 +217,7 @@ export class UploadToUrl implements INodeType {
 					// Handle base64 input
 					const base64Data = this.getNodeParameter('base64Data', i) as string;
 					fileName = this.getNodeParameter('fileName', i) as string;
-					let mimeTypeValue = this.getNodeParameter('mimeType', i) as string;
+					const mimeTypeValue = this.getNodeParameter('mimeType', i) as string;
 
 					// Handle MIME type selection
 					if (mimeTypeValue === 'auto') {
