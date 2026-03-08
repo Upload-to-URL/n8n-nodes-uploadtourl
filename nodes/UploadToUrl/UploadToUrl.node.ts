@@ -246,23 +246,43 @@ export class UploadToUrl implements INodeType {
 						displayName: 'Expiry',
 						name: 'expiryType',
 						type: 'options',
-						default: 'never',
+						default: '7',
 						description: 'How long the file should be available on the server',
 						options: [
+							{
+								name: '1 Day',
+								value: '1',
+								description: 'File expires after 1 day',
+							},
+							{
+								name: '7 Days',
+								value: '7',
+								description: 'File expires after 7 days',
+							},
+							{
+								name: '15 Days',
+								value: '15',
+								description: 'File expires after 15 days',
+							},
+							{
+								name: '30 Days',
+								value: '30',
+								description: 'File expires after 30 days',
+							},
 							{
 								name: 'Never',
 								value: 'never',
 								description: 'File will never expire',
 							},
 							{
-								name: 'Custom (Days)',
+								name: 'Custom',
 								value: 'custom',
 								description: 'Set a custom number of days before the file expires',
 							},
 						],
 					},
 					{
-						displayName: 'Number of Days',
+						displayName: 'Number of Days to Expiry',
 						name: 'expiryDays',
 						type: 'number',
 						default: 30,
@@ -370,8 +390,15 @@ export class UploadToUrl implements INodeType {
 						expiryDays?: number;
 					};
 					let expiryDaysValue: string | number = 'never';
-					if (additionalOptions.expiryType === 'custom' && additionalOptions.expiryDays) {
-						expiryDaysValue = additionalOptions.expiryDays;
+					if (additionalOptions.expiryType !== undefined) {
+						if (additionalOptions.expiryType === 'never') {
+							expiryDaysValue = 'never';
+						} else if (additionalOptions.expiryType === 'custom') {
+							expiryDaysValue = additionalOptions.expiryDays ?? 30;
+						} else {
+							// Preset values: '1', '7', '15', '30'
+							expiryDaysValue = parseInt(additionalOptions.expiryType, 10);
+						}
 					}
 
 					const boundary = '----n8nFormBoundary' + Math.random().toString(36).substring(2);
