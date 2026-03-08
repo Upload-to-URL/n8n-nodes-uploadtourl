@@ -229,13 +229,13 @@ export class UploadToUrl implements INodeType {
 				required: true,
 				description: 'Enter a custom MIME type (e.g., application/vnd.ms-excel)',
 			},
-			// ---- Additional Options (for Upload) ----
+			// ---- Expiry Options (for Upload) ----
 			{
-				displayName: 'Additional Options',
-				name: 'additionalOptions',
-				type: 'collection',
-				placeholder: 'Add Option',
-				default: {},
+				displayName: 'Expiry',
+				name: 'expiryType',
+				type: 'options',
+				default: '7',
+				description: 'How long the file should be available on the server',
 				displayOptions: {
 					show: {
 						operation: ['upload'],
@@ -243,60 +243,52 @@ export class UploadToUrl implements INodeType {
 				},
 				options: [
 					{
-						displayName: 'Expiry',
-						name: 'expiryType',
-						type: 'options',
-						default: '7',
-						description: 'How long the file should be available on the server',
-						options: [
-							{
-								name: '1 Day',
-								value: '1',
-								description: 'File expires after 1 day',
-							},
-							{
-								name: '7 Days',
-								value: '7',
-								description: 'File expires after 7 days',
-							},
-							{
-								name: '15 Days',
-								value: '15',
-								description: 'File expires after 15 days',
-							},
-							{
-								name: '30 Days',
-								value: '30',
-								description: 'File expires after 30 days',
-							},
-							{
-								name: 'Never',
-								value: 'never',
-								description: 'File will never expire',
-							},
-							{
-								name: 'Custom',
-								value: 'custom',
-								description: 'Set a custom number of days before the file expires',
-							},
-						],
+						name: '1 Day',
+						value: '1',
+						description: 'File expires after 1 day',
 					},
 					{
-						displayName: 'Number of Days to Expiry',
-						name: 'expiryDays',
-						type: 'number',
-						default: 30,
-						typeOptions: {
-							minValue: 1,
-						},
-						description: 'Number of days the file should remain available',
-						displayOptions: {
-							show: {
-								expiryType: ['custom'],
-							},
-						},
+						name: '7 Days',
+						value: '7',
+						description: 'File expires after 7 days',
+					},
+					{
+						name: '15 Days',
+						value: '15',
+						description: 'File expires after 15 days',
+					},
+					{
+						name: '30 Days',
+						value: '30',
+						description: 'File expires after 30 days',
+					},
+					{
+						name: 'Never',
+						value: 'never',
+						description: 'File will never expire',
+					},
+					{
+						name: 'Custom',
+						value: 'custom',
+						description: 'Set a custom number of days before the file expires',
 					},
 				],
+			},
+			{
+				displayName: 'Expiry Days',
+				name: 'expiryDays',
+				type: 'number',
+				default: 30,
+				typeOptions: {
+					minValue: 1,
+				},
+				description: 'Number of days the file should remain available',
+				displayOptions: {
+					show: {
+						operation: ['upload'],
+						expiryType: ['custom'],
+					},
+				},
 			},
 		],
 	};
@@ -384,21 +376,16 @@ export class UploadToUrl implements INodeType {
 						binaryDataBuffer = Buffer.from(cleanBase64, 'base64');
 					}
 
-					// Determine expiry_days value from additional options
-					const additionalOptions = this.getNodeParameter('additionalOptions', i, {}) as {
-						expiryType?: string;
-						expiryDays?: number;
-					};
+					// Determine expiry_days value
+					const expiryType = this.getNodeParameter('expiryType', i, '7') as string;
 					let expiryDaysValue: string | number = 'never';
-					if (additionalOptions.expiryType !== undefined) {
-						if (additionalOptions.expiryType === 'never') {
-							expiryDaysValue = 'never';
-						} else if (additionalOptions.expiryType === 'custom') {
-							expiryDaysValue = additionalOptions.expiryDays ?? 30;
-						} else {
-							// Preset values: '1', '7', '15', '30'
-							expiryDaysValue = parseInt(additionalOptions.expiryType, 10);
-						}
+					if (expiryType === 'never') {
+						expiryDaysValue = 'never';
+					} else if (expiryType === 'custom') {
+						expiryDaysValue = this.getNodeParameter('expiryDays', i, 30) as number;
+					} else {
+						// Preset values: '1', '7', '15', '30'
+						expiryDaysValue = parseInt(expiryType, 10);
 					}
 
 					const boundary = '----n8nFormBoundary' + Math.random().toString(36).substring(2);
