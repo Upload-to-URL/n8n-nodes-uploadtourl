@@ -38,11 +38,13 @@ Then restart your n8n instance.
 
 ### Upload to URL
 
-The **Upload to URL** node supports the following operation:
+The **Upload to URL** node supports the following operations:
 
 - **Upload File** — Upload a file (binary data or base64 string) from your workflow and receive a publicly accessible URL in response.
+- **Retrieve File** — Retrieve details of a previously uploaded file using its file ID.
+- **Delete File** — Delete a previously uploaded file from the server using its file ID.
 
-#### Parameters
+#### Upload File Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -52,6 +54,13 @@ The **Upload to URL** node supports the following operation:
 | **Filename** | string | `file.bin` | Name of the file (e.g., document.pdf, image.jpg). Required for base64 input. |
 | **MIME Type** | selection | `auto` | Choose from common MIME types or select "Custom" to specify your own. Also supports "Auto-detect from filename" to automatically determine the MIME type from the file extension. |
 | **Custom MIME Type** | string | - | Custom MIME type (e.g., application/vnd.ms-excel). Only shown when MIME Type is set to "Custom". |
+| **Expiry Days** | number | - | Number of days after which the uploaded file will be automatically deleted from the server. Leave empty for no expiration. |
+
+#### Retrieve File / Delete File Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| **File ID** | string | The ID of the file to retrieve or delete. This is returned in the response when a file is uploaded. |
 
 #### Output
 
@@ -63,6 +72,8 @@ The node returns the JSON response from the Upload to URL API, which includes th
 
 - **Multiple Input Types** — Supports both binary data from previous nodes and direct base64 string input.
 - **Smart Defaults** — Filename defaults to `file.bin` and MIME type defaults to auto-detection for seamless setup.
+- **File Expiry** — Set an expiry period (in days) for uploaded files so they are automatically deleted from the server after the specified time.
+- **Retrieve & Delete Files** — Retrieve details of or delete previously uploaded files using their file ID.
 - **Batch Processing** — Handles multiple input items; each item's file is uploaded individually.
 - **Continue on Fail** — When enabled, the workflow continues even if an upload fails, returning the error message in the output instead of stopping execution.
 - **Usable as Sub-Node / Tool** — Can be used as a tool in AI agent workflows and sub-workflows.
