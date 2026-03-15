@@ -214,7 +214,7 @@ The node is marked as **usable as a tool**, so it can be used within n8n's AI Ag
 ### Setup
 
 ```bash
-git clone https://github.com/jiteshdugar/n8n-nodes-uploadtourl.git
+git clone https://github.com/Upload-to-URL/n8n-nodes-uploadtourl.git
 cd n8n-nodes-uploadtourl
 npm install
 ```

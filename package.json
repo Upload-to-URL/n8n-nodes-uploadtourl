@@ -35,11 +35,11 @@
 	},
 	"homepage": "https://uploadtourl.com",
 	"bugs": {
-		"url": "https://github.com/jiteshdugar/n8n-nodes-uploadtourl/issues"
+		"url": "https://github.com/Upload-to-URL/n8n-nodes-uploadtourl/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/jiteshdugar/n8n-nodes-uploadtourl.git"
+		"url": "git+https://github.com/Upload-to-URL/n8n-nodes-uploadtourl.git"
 	},
 	"license": "MIT",
 	"type": "commonjs",
