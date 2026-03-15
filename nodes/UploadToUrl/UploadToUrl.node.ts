@@ -449,6 +449,15 @@ export class UploadToUrl implements INodeType {
 					});
 					continue;
 				}
+
+				const errorData = (error as any).response?.data;
+				if (errorData && typeof errorData === 'object' && errorData.detail) {
+					throw new NodeOperationError(this.getNode(), errorData.detail as string, {
+						itemIndex: i,
+						description: (error as Error).message,
+					});
+				}
+
 				throw new NodeOperationError(this.getNode(), error as Error, { itemIndex: i });
 			}
 		}
