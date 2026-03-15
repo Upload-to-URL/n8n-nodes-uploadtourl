@@ -4,7 +4,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 export class UploadToUrl implements INodeType {
 	description: INodeTypeDescription = {
@@ -450,11 +450,11 @@ export class UploadToUrl implements INodeType {
 					continue;
 				}
 
-				const errorData = (error as any).response?.data;
-				if (errorData && typeof errorData === 'object' && errorData.detail) {
-					throw new NodeOperationError(this.getNode(), errorData.detail as string, {
+				const errorResponse = (error as any).response;
+				if (errorResponse) {
+					// Use NodeApiError which is better at surfacing API response details in n8n UI
+					throw new NodeApiError(this.getNode(), errorResponse, {
 						itemIndex: i,
-						description: (error as Error).message,
 					});
 				}
 
