@@ -2,7 +2,14 @@
 	"node": "n8n-nodes-uploadtourl.uploadToUrl",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
-	"categories": ["Miscellaneous"],
+	"categories": [
+		"Utility",
+		"Data & Storage",
+		"Development",
+		"Developer Tools",
+		"Marketing",
+		"Miscellaneous"
+	],
 	"alias": [
 		"Upload",
 		"File Upload",
@@ -76,7 +83,13 @@
 		"Fast Upload",
 		"Instant URL",
 		"Online File",
-		"Store File"
+		"Store File",
+		"imgur",
+		"imgbb",
+		"s3",
+		"amazon s3",
+		"aws s3",
+		"cloudinary"
 	],
 	"resources": {
 		"credentialDocumentation": [

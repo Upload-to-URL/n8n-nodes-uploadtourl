@@ -38,19 +38,19 @@ export class UploadToUrl implements INodeType {
 						name: 'Upload File',
 						value: 'upload',
 						description: 'Upload a file (binary data or base64) and get a public URL',
-						action: 'Upload a file',
+						action: 'Upload a File',
 					},
 					{
 						name: 'Retrieve File',
 						value: 'retrieve',
 						description: 'Retrieve file information by file ID',
-						action: 'Retrieve a file',
+						action: 'Retrieve a File',
 					},
 					{
 						name: 'Delete File',
 						value: 'delete',
 						description: 'Delete a file by file ID',
-						action: 'Delete a file',
+						action: 'Delete a File',
 					},
 				],
 				default: 'upload',
@@ -407,18 +407,18 @@ export class UploadToUrl implements INodeType {
 					// Build multipart body with file and expiry_days
 					const filePart = Buffer.from(
 						`--${boundary}\r\n` +
-							`Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n` +
-							`Content-Type: ${contentType}\r\n\r\n`,
+						`Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n` +
+						`Content-Type: ${contentType}\r\n\r\n`,
 					);
 					const expiryPart = Buffer.from(
 						`\r\n--${boundary}\r\n` +
-							`Content-Disposition: form-data; name="expiry_days"\r\n\r\n` +
-							`${expiryDaysValue}`,
+						`Content-Disposition: form-data; name="expiry_days"\r\n\r\n` +
+						`${expiryDaysValue}`,
 					);
 					const sourcePart = Buffer.from(
 						`\r\n--${boundary}\r\n` +
-							`Content-Disposition: form-data; name="source"\r\n\r\n` +
-							`n8n`,
+						`Content-Disposition: form-data; name="source"\r\n\r\n` +
+						`n8n`,
 					);
 					const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
 					const body = Buffer.concat([filePart, binaryDataBuffer, expiryPart, sourcePart, footer]);
