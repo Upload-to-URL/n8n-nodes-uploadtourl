@@ -29,10 +29,28 @@ export class UploadToUrl implements INodeType {
 		],
 		properties: [
 			{
+				displayName: 'Resource',
+				name: 'resource',
+				type: 'options',
+				noDataExpression: true,
+				options: [
+					{
+						name: 'File Actions',
+						value: 'fileActions',
+					},
+				],
+				default: 'fileActions',
+			},
+			{
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
 				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: ['fileActions'],
+					},
+				},
 				options: [
 					{
 						name: 'Upload File',

@@ -2,7 +2,9 @@
 
 [![Hero Banner](images/hero-banner.png)](https://uploadtourl.com)
 
-This is an [n8n](https://n8n.io/) community node that lets you upload any file and get a public URL instantly using [Upload to URL](https://uploadtourl.com). Supports both binary data and base64 string inputs.
+This is a verified [n8n](https://n8n.io/) node that lets you upload any file and get a public URL instantly using [Upload to URL](https://uploadtourl.com). Supports both binary data and base64 string inputs.
+
+This is the link to our n8n verified integration - [https://n8n.io/integrations/upload-to-url/](https://n8n.io/integrations/upload-to-url/)
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
@@ -12,33 +14,23 @@ This is an [n8n](https://n8n.io/) community node that lets you upload any file a
 [Usage](#usage) |
 [Resources](#resources)
 
-## Installation
+## Setup
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+The **Upload to URL** node is a verified n8n integration, which means it can be set up directly on both n8n cloud and self-hosted instances without needing to install it through the Community Nodes section.
 
 ### In n8n
 
-1. Go to **Settings > Community Nodes**
-2. Select **Install**
-3. Enter `n8n-nodes-uploadtourl` in the **Enter npm package name** field
-4. Agree to the risks of using community nodes and select **Install**
-
-### Manual Installation
-
-To install this node manually in a self-hosted n8n instance:
-
-```bash
-cd ~/.n8n/nodes
-npm install n8n-nodes-uploadtourl
-```
-
-Then restart your n8n instance.
+1. Open your n8n instance.
+2. Create or open a workflow.
+3. Click the **+** button to add a node.
+4. Search for **Upload to URL**.
+5. Select it to add it to your workflow.
 
 ## Operations
 
-### Upload to URL
+### File Actions
 
-The **Upload to URL** node supports the following operations:
+The **Upload to URL** node provides the following operations under the **File Actions** resource:
 
 - **Upload File** — Upload a file (binary data or base64 string) from your workflow and receive a publicly accessible URL in response.
 - **Retrieve File** — Retrieve details of a previously uploaded file using its file ID.
