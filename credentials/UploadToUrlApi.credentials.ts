@@ -16,7 +16,7 @@ export class UploadToUrlApi implements ICredentialType {
 		dark: 'file:../icons/uploadtourl.dark.svg',
 	};
 
-	documentationUrl = 'https://uploadtourl.com';
+	documentationUrl = 'https://accounts.uploadtourl.com/sign-up';
 
 	properties: INodeProperties[] = [
 		{
