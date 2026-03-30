@@ -35,7 +35,7 @@ export class UploadToUrl implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'File Actions',
+						name: 'File',
 						value: 'fileActions',
 					},
 				],
