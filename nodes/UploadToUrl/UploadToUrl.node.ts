@@ -59,6 +59,12 @@ export class UploadToUrl implements INodeType {
 						action: 'Upload a File',
 					},
 					{
+						name: 'Upload Multiple Files',
+						value: 'uploadMultiple',
+						description: 'Upload multiple binary files and get their public URLs',
+						action: 'Upload Multiple Files',
+					},
+					{
 						name: 'Retrieve File',
 						value: 'retrieve',
 						description: 'Retrieve file information by file ID',
@@ -69,6 +75,18 @@ export class UploadToUrl implements INodeType {
 						value: 'delete',
 						description: 'Delete a file by file ID',
 						action: 'Delete a File',
+					},
+					{
+						name: 'Upload File from URL',
+						value: 'uploadFileFromUrl',
+						description: 'Fetch a file from a public URL and host it',
+						action: 'Upload a File from URL',
+					},
+					{
+						name: 'Download File',
+						value: 'download',
+						description: 'Download a file from a public URL',
+						action: 'Download a File',
 					},
 				],
 				default: 'upload',
@@ -139,6 +157,109 @@ export class UploadToUrl implements INodeType {
 				},
 				required: true,
 				description: 'Name of the binary property containing the file to upload',
+			},
+			// ---- Multiple Upload Parameters ----
+			{
+				displayName: 'Selection Mode',
+				name: 'selectionMode',
+				type: 'options',
+				options: [
+					{
+						name: 'All Binary Data',
+						value: 'all',
+						description: 'Automatically upload every binary property found in the item',
+					},
+					{
+						name: 'Specific Names',
+						value: 'names',
+						description: 'Specify a list of binary property names to upload',
+					},
+					{
+						name: 'Regex Pattern',
+						value: 'regex',
+						description: 'Match binary property names using a regular expression',
+					},
+				],
+				default: 'all',
+				displayOptions: {
+					show: {
+						operation: ['uploadMultiple'],
+					},
+				},
+				description: 'How to select which binary properties to upload',
+			},
+			{
+				displayName: 'Binary Property Names',
+				name: 'binaryPropertyNames',
+				type: 'fixedCollection',
+				placeholder: 'Add Property',
+				typeOptions: {
+					multipleValues: true,
+				},
+				displayOptions: {
+					show: {
+						operation: ['uploadMultiple'],
+						selectionMode: ['names'],
+					},
+				},
+				default: {},
+				options: [
+					{
+						name: 'propertyList',
+						displayName: 'Property',
+						values: [
+							{
+								displayName: 'Property Name',
+								name: 'name',
+								type: 'string',
+								default: 'data',
+								description: 'Name of the binary property to upload',
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Property Name Regex',
+				name: 'propertyNameRegex',
+				type: 'string',
+				default: '',
+				placeholder: 'e.g. ^attachment_.*',
+				displayOptions: {
+					show: {
+						operation: ['uploadMultiple'],
+						selectionMode: ['regex'],
+					},
+				},
+				required: true,
+				description: 'Regular expression to match binary property names',
+			},
+			{
+				displayName: 'File URL',
+				name: 'fileUrl',
+				type: 'string',
+				default: '',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['uploadFileFromUrl', 'download'],
+					},
+				},
+				placeholder: 'https://example.com/image.jpg',
+				description: 'The public URL of the file to fetch',
+			},
+			{
+				displayName: 'Put Output In Field',
+				name: 'dataPropertyName',
+				type: 'string',
+				default: 'data',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['download'],
+					},
+				},
+				description: 'The name of the binary property where the file should be stored',
 			},
 			{
 				displayName: 'Base64 Data',
@@ -270,7 +391,7 @@ export class UploadToUrl implements INodeType {
 				description: 'How long the file should be available on the server',
 				displayOptions: {
 					show: {
-						operation: ['upload'],
+						operation: ['upload', 'uploadMultiple', 'uploadFileFromUrl'],
 					},
 				},
 				options: [
@@ -317,7 +438,7 @@ export class UploadToUrl implements INodeType {
 				description: 'Number of days the file should remain available',
 				displayOptions: {
 					show: {
-						operation: ['upload'],
+						operation: ['upload', 'uploadMultiple', 'uploadFileFromUrl'],
 						expiryType: ['custom'],
 					},
 				},
@@ -361,53 +482,38 @@ export class UploadToUrl implements INodeType {
 						json: typeof response === 'string' ? JSON.parse(response) : response,
 						pairedItem: i,
 					});
-				} else {
-					// Upload operation
-					const inputType = this.getNodeParameter('inputType', i) as string;
-					let binaryDataBuffer: Buffer;
-					let fileName: string;
-					let contentType: string;
+				} else if (operation === 'download') {
+					const fileUrl = this.getNodeParameter('fileUrl', i) as string;
+					const dataPropertyName = this.getNodeParameter('dataPropertyName', i) as string;
 
-					if (inputType === 'binary') {
-						const binaryPropertyName = this.getNodeParameter('binaryPropertyName', i) as string;
-						const binaryData = this.helpers.assertBinaryData(i, binaryPropertyName);
-						binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
-						fileName = binaryData.fileName ?? 'file';
-						contentType = binaryData.mimeType;
-					} else {
-						const base64Data = this.getNodeParameter('base64Data', i) as string;
-						fileName = this.getNodeParameter('fileName', i) as string;
-						const mimeTypeValue = this.getNodeParameter('mimeType', i) as string;
+					const response = await this.helpers.httpRequest({
+						method: 'GET',
+						url: fileUrl,
+						encoding: 'arraybuffer',
+						returnFullResponse: true,
+					});
 
-						if (mimeTypeValue === 'auto') {
-							const ext = fileName.split('.').pop()?.toLowerCase();
-							const mimeMap: { [key: string]: string } = {
-								'jpg': 'image/jpeg',
-								'jpeg': 'image/jpeg',
-								'png': 'image/png',
-								'gif': 'image/gif',
-								'webp': 'image/webp',
-								'svg': 'image/svg+xml',
-								'pdf': 'application/pdf',
-								'txt': 'text/plain',
-								'csv': 'text/csv',
-								'json': 'application/json',
-								'xml': 'application/xml',
-								'zip': 'application/zip',
-								'mp4': 'video/mp4',
-								'mp3': 'audio/mpeg',
-							};
-							contentType = mimeMap[ext || ''] || 'application/octet-stream';
-						} else if (mimeTypeValue === 'custom') {
-							contentType = this.getNodeParameter('customMimeType', i) as string;
-						} else {
-							contentType = mimeTypeValue;
-						}
+					const binaryDataBuffer = Buffer.from(response.data);
+					const { fileName, contentType } = extractMetadata(response.headers, fileUrl);
 
-						const cleanBase64 = base64Data.replace(/^data:[^;]+;base64,/, '');
-						binaryDataBuffer = Buffer.from(cleanBase64, 'base64');
-					}
+					const binaryData = await this.helpers.prepareBinaryData(
+						binaryDataBuffer,
+						fileName,
+						contentType,
+					);
 
+					returnData.push({
+						json: items[i].json,
+						binary: {
+							[dataPropertyName]: binaryData,
+						},
+						pairedItem: i,
+					});
+				} else if (
+					operation === 'upload' ||
+					operation === 'uploadMultiple' ||
+					operation === 'uploadFileFromUrl'
+				) {
 					// Determine expiry_days value
 					const expiryType = this.getNodeParameter('expiryType', i, '7') as string;
 					let expiryDaysValue: string | number = 'never';
@@ -416,48 +522,180 @@ export class UploadToUrl implements INodeType {
 					} else if (expiryType === 'custom') {
 						expiryDaysValue = this.getNodeParameter('expiryDays', i, 30) as number;
 					} else {
-						// Preset values: '1', '7', '15', '30'
 						expiryDaysValue = parseInt(expiryType, 10);
 					}
 
-					const boundary = '----n8nFormBoundary' + Math.random().toString(36).substring(2);
+					if (operation === 'uploadFileFromUrl') {
+						const fileUrl = this.getNodeParameter('fileUrl', i) as string;
 
-					// Build multipart body with file and expiry_days
-					const filePart = Buffer.from(
-						`--${boundary}\r\n` +
-						`Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n` +
-						`Content-Type: ${contentType}\r\n\r\n`,
-					);
-					const expiryPart = Buffer.from(
-						`\r\n--${boundary}\r\n` +
-						`Content-Disposition: form-data; name="expiry_days"\r\n\r\n` +
-						`${expiryDaysValue}`,
-					);
-					const sourcePart = Buffer.from(
-						`\r\n--${boundary}\r\n` +
-						`Content-Disposition: form-data; name="source"\r\n\r\n` +
-						`n8n`,
-					);
-					const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
-					const body = Buffer.concat([filePart, binaryDataBuffer, expiryPart, sourcePart, footer]);
+						// Fetch remote file
+						const response = await this.helpers.httpRequest({
+							method: 'GET',
+							url: fileUrl,
+							encoding: 'arraybuffer',
+							returnFullResponse: true,
+						});
 
-					const response = await this.helpers.httpRequestWithAuthentication.call(
-						this,
-						'uploadToUrlApi',
-						{
-							method: 'POST',
-							url: 'https://uploadtourl.com/api/upload',
-							body,
-							headers: {
-								'Content-Type': `multipart/form-data; boundary=${boundary}`,
-							},
-						},
-					);
+						const binaryDataBuffer = Buffer.from(response.data);
+						const { fileName, contentType } = extractMetadata(response.headers, fileUrl);
 
-					returnData.push({
-						json: typeof response === 'string' ? JSON.parse(response) : response,
-						pairedItem: i,
-					});
+						const uploadResponse = await performUpload.call(
+							this,
+							binaryDataBuffer,
+							fileName,
+							contentType,
+							expiryDaysValue,
+						);
+
+						returnData.push({
+							json:
+								typeof uploadResponse === 'string'
+									? JSON.parse(uploadResponse)
+									: uploadResponse,
+							pairedItem: i,
+						});
+					} else if (operation === 'upload') {
+						const inputType = this.getNodeParameter('inputType', i) as string;
+						let binaryDataBuffer: Buffer;
+						let fileName: string;
+						let contentType: string;
+
+						if (inputType === 'binary') {
+							const binaryPropertyName = this.getNodeParameter('binaryPropertyName', i) as string;
+							const binaryData = this.helpers.assertBinaryData(i, binaryPropertyName);
+							binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
+							fileName = binaryData.fileName ?? 'file';
+							contentType = binaryData.mimeType;
+						} else {
+							const base64Data = this.getNodeParameter('base64Data', i) as string;
+							fileName = this.getNodeParameter('fileName', i) as string;
+							const mimeTypeValue = this.getNodeParameter('mimeType', i) as string;
+
+							if (mimeTypeValue === 'auto') {
+								const ext = fileName.split('.').pop()?.toLowerCase();
+								const mimeMap: { [key: string]: string } = {
+									jpg: 'image/jpeg',
+									jpeg: 'image/jpeg',
+									png: 'image/png',
+									gif: 'image/gif',
+									webp: 'image/webp',
+									svg: 'image/svg+xml',
+									pdf: 'application/pdf',
+									txt: 'text/plain',
+									csv: 'text/csv',
+									json: 'application/json',
+									xml: 'application/xml',
+									zip: 'application/zip',
+									mp4: 'video/mp4',
+									mp3: 'audio/mpeg',
+								};
+								contentType = mimeMap[ext || ''] || 'application/octet-stream';
+							} else if (mimeTypeValue === 'custom') {
+								contentType = this.getNodeParameter('customMimeType', i) as string;
+							} else {
+								contentType = mimeTypeValue;
+							}
+
+							const cleanBase64 = base64Data.replace(/^data:[^;]+;base64,/, '');
+							binaryDataBuffer = Buffer.from(cleanBase64, 'base64');
+						}
+
+						const uploadResponse = await performUpload.call(
+							this,
+							binaryDataBuffer,
+							fileName,
+							contentType,
+							expiryDaysValue,
+						);
+						returnData.push({
+							json:
+								typeof uploadResponse === 'string'
+									? JSON.parse(uploadResponse)
+									: uploadResponse,
+							pairedItem: i,
+						});
+					} else {
+						// uploadMultiple
+						const selectionMode = this.getNodeParameter('selectionMode', i) as string;
+						let propertyNames: string[] = [];
+
+						const itemBinaryData = items[i].binary;
+						if (!itemBinaryData) {
+							throw new NodeOperationError(this.getNode(), 'No binary data found in item', {
+								itemIndex: i,
+							});
+						}
+
+						if (selectionMode === 'all') {
+							propertyNames = Object.keys(itemBinaryData);
+						} else if (selectionMode === 'names') {
+							const propertyList = this.getNodeParameter(
+								'binaryPropertyNames.propertyList',
+								i,
+								[],
+							) as Array<{ name: string }>;
+							propertyNames = propertyList.map((p) => p.name);
+						} else if (selectionMode === 'regex') {
+							const pattern = this.getNodeParameter('propertyNameRegex', i) as string;
+							const regex = new RegExp(pattern);
+							propertyNames = Object.keys(itemBinaryData).filter((name) => regex.test(name));
+						}
+
+						if (propertyNames.length === 0) {
+							returnData.push({
+								json: { message: 'No binary properties matched the selection criteria' },
+								pairedItem: i,
+							});
+							continue;
+						}
+
+						const uploadResults = [];
+						for (const propertyName of propertyNames) {
+							try {
+								const binaryDataVal = itemBinaryData[propertyName];
+								const binaryFiles = Array.isArray(binaryDataVal) ? binaryDataVal : [binaryDataVal];
+
+								for (const binaryData of binaryFiles) {
+									// Support for both standard metadata objects and potential array elements
+									const fileName = binaryData.fileName ?? 'file';
+									const contentType = binaryData.mimeType;
+									let binaryDataBuffer: Buffer;
+
+									if (binaryData.data && typeof binaryData.data === 'string') {
+										// If data is already there (base64)
+										binaryDataBuffer = Buffer.from(binaryData.data, 'base64');
+									} else {
+										// Fallback to helper (works for both standard properties and handles most cases)
+										binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, propertyName);
+									}
+
+									const response = await performUpload.call(
+										this,
+										binaryDataBuffer,
+										fileName,
+										contentType,
+										expiryDaysValue,
+									);
+									uploadResults.push({
+										property: propertyName,
+										fileName,
+										data:
+											typeof response === 'string' ? JSON.parse(response) : response,
+									});
+								}
+							} catch (error) {
+								uploadResults.push({
+									property: propertyName,
+									error: (error as Error).message,
+								});
+							}
+						}
+
+						returnData.push({
+							json: { results: uploadResults },
+							pairedItem: i,
+						});
+					}
 				}
 			} catch (error) {
 				if (this.continueOnFail()) {
@@ -470,7 +708,6 @@ export class UploadToUrl implements INodeType {
 
 				const errorResponse = (error as any).response;
 				if (errorResponse) {
-					// Use NodeApiError which is better at surfacing API response details in n8n UI
 					throw new NodeApiError(this.getNode(), errorResponse, {
 						itemIndex: i,
 					});
@@ -482,4 +719,73 @@ export class UploadToUrl implements INodeType {
 
 		return [returnData];
 	}
+}
+
+async function performUpload(
+	this: IExecuteFunctions,
+	binaryDataBuffer: Buffer,
+	fileName: string,
+	contentType: string,
+	expiryDaysValue: string | number,
+): Promise<any> {
+	const boundary = '----n8nFormBoundary' + Math.random().toString(36).substring(2);
+
+	const filePart = Buffer.from(
+		`--${boundary}\r\n` +
+			`Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n` +
+			`Content-Type: ${contentType}\r\n\r\n`,
+	);
+	const expiryPart = Buffer.from(
+		`\r\n--${boundary}\r\n` +
+			`Content-Disposition: form-data; name="expiry_days"\r\n\r\n` +
+			`${expiryDaysValue}`,
+	);
+	const sourcePart = Buffer.from(
+		`\r\n--${boundary}\r\n` +
+			`Content-Disposition: form-data; name="source"\r\n\r\n` +
+			`n8n`,
+	);
+	const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
+	const body = Buffer.concat([filePart, binaryDataBuffer, expiryPart, sourcePart, footer]);
+
+	return await this.helpers.httpRequestWithAuthentication.call(this, 'uploadToUrlApi', {
+		method: 'POST',
+		url: 'https://uploadtourl.com/api/upload',
+		body,
+		headers: {
+			'Content-Type': `multipart/form-data; boundary=${boundary}`,
+		},
+	});
+}
+
+function extractMetadata(
+	headers: { [key: string]: any },
+	fileUrl: string,
+): { fileName: string; contentType: string } {
+	let fileName = 'file';
+	let contentType = 'application/octet-stream';
+
+	if (headers['content-type']) {
+		contentType = (headers['content-type'] as string).split(';')[0];
+	}
+
+	if (headers['content-disposition']) {
+		const contentDisposition = headers['content-disposition'] as string;
+		const filenameMatch = contentDisposition.match(/filename(?:\*)=(?:[^\']+\'\')?\"?([^\";]+)\"?/);
+		if (filenameMatch) {
+			fileName = filenameMatch[1];
+		}
+	}
+
+	if (fileName === 'file') {
+		try {
+			const urlPath = new URL(fileUrl).pathname;
+			const filenameFromUrl = urlPath.split('/').pop();
+			if (filenameFromUrl && filenameFromUrl.includes('.')) {
+				fileName = filenameFromUrl;
+			}
+		} catch (e) {}
+	}
+
+	return { fileName, contentType };
 }

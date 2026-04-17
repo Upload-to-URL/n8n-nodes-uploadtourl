@@ -33,6 +33,9 @@ The **Upload to URL** node is a verified n8n integration, which means it can be 
 The **Upload to URL** node provides the following operations under the **File Actions** resource:
 
 - **Upload File** — Upload a file (binary data or base64 string) from your workflow and receive a publicly accessible URL in response.
+- **Upload Multiple Files** — Upload multiple binary files at once using flexible selection modes (All, Specific Names, or Regex).
+- **Upload File from URL** — Fetch a file from a public URL and host it instantly on your server.
+- **Download File** — Download a file from any public URL directly into n8n binary storage.
 - **Retrieve File** — Retrieve details of a previously uploaded file using its file ID.
 - **Delete File** — Delete a previously uploaded file from the server using its file ID.
 
@@ -47,6 +50,22 @@ The **Upload to URL** node provides the following operations under the **File Ac
 | **MIME Type** | selection | `auto` | Choose from common MIME types or select "Custom" to specify your own. Also supports "Auto-detect from filename" to automatically determine the MIME type from the file extension. |
 | **Custom MIME Type** | string | - | Custom MIME type (e.g., application/vnd.ms-excel). Only shown when MIME Type is set to "Custom". |
 | **Expiry Days** | number | - | Number of days after which the uploaded file will be automatically deleted from the server. Leave empty for no expiration. |
+
+#### Upload Multiple Files Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| **Selection Mode** | selection | `All Binary Data` | Choose how to select files: "All Binary Data", "Specific Names", or "Regex Pattern" |
+| **Binary Property Names** | list | - | A list of specific binary property names to upload. Only shown in "Specific Names" mode. |
+| **Property Name Regex** | string | - | A regular expression to match binary properties (e.g., `^attachment_.*`). Only shown in "Regex Pattern" mode. |
+
+#### Upload File from URL / Download File Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| **File URL** | string | - | The public URL of the file you want to download. |
+| **Put Output In Field** | string | `data` | The name of the binary property where the file should be stored. Only shown in "Download File" operation. |
+| **Expiry Days** | number | - | Number of days after which the uploaded file will be automatically deleted. Only shown in "Upload" operations. |
 
 #### Retrieve File / Delete File Parameters
 
@@ -67,6 +86,8 @@ The node returns the JSON response from the Upload to URL API, which includes th
 - **File Expiry** — Set an expiry period (in days) for uploaded files so they are automatically deleted from the server after the specified time.
 - **Retrieve & Delete Files** — Retrieve details of or delete previously uploaded files using their file ID.
 - **Batch Processing** — Handles multiple input items; each item's file is uploaded individually.
+- **Multiple File Upload** — Upload multiple binary properties from a single item using Regex or Name matching.
+- **Instant Re-hosting** — Download a file from any public URL and host it instantly.
 - **Continue on Fail** — When enabled, the workflow continues even if an upload fails, returning the error message in the output instead of stopping execution.
 - **Usable as Sub-Node / Tool** — Can be used as a tool in AI agent workflows and sub-workflows.
 
@@ -128,6 +149,34 @@ The **Upload to URL** node provides a clean interface for uploading files with s
 5. Execute the workflow to upload the file and receive a public URL
 
 **Note**: With the default settings, you only need to provide the base64 data. The node will automatically use `file.bin` as the filename and detect the MIME type from the file extension if you change the filename to end with a proper extension (e.g., `image.jpg`).
+
+### Uploading Multiple Files (New)
+
+The **Upload Multiple Files** operation is designed for workflows where a single item contains multiple attachments (e.g., from an Email or Form trigger).
+
+1. **Selection Mode: All Binary Data**
+   - No extra configuration needed. Every binary property found in the item is uploaded.
+2. **Selection Mode: Specific Names**
+   - Add the specific keys you want to upload (e.g., `invoice_pdf`, `receipt_png`).
+3. **Selection Mode: Regex Pattern**
+   - Match properties dynamically, such as `^attachment_[0-9]+` to grab all email attachments.
+
+**Pro Feature**: The node automatically supports **Binary Arrays**. If a property contains an array of files (common in custom Code nodes), it will iterate and upload every file in that array.
+
+### Uploading from URL (New)
+
+1. Select **Upload File from URL**.
+2. Paste the public link to any file (image, PDF, archive, etc.).
+3. The node fetches the file, extracts the filename and MIME type from the source headers, and hosts it instantly.
+
+### Downloading Files (New)
+
+1. Select **Download File**.
+2. Paste the public link to any file.
+3. The node downloads the file and attaches it as a binary property (e.g., `data`) to your item, allowing subsequent nodes (like "Write Binary File") to process it.
+
+
+
 
 ### Base64 Input Examples
 
