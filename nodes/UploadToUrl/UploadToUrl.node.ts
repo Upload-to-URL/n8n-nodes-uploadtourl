@@ -489,11 +489,11 @@ export class UploadToUrl implements INodeType {
 					const response = await this.helpers.httpRequest({
 						method: 'GET',
 						url: fileUrl,
-						encoding: 'arraybuffer',
+						encoding: null,
 						returnFullResponse: true,
 					});
 
-					const binaryDataBuffer = Buffer.from(response.data);
+					const binaryDataBuffer = Buffer.from(response.body || response.data);
 					const { fileName, contentType } = extractMetadata(response.headers, fileUrl);
 
 					const binaryData = await this.helpers.prepareBinaryData(
@@ -532,11 +532,11 @@ export class UploadToUrl implements INodeType {
 						const response = await this.helpers.httpRequest({
 							method: 'GET',
 							url: fileUrl,
-							encoding: 'arraybuffer',
+							encoding: null,
 							returnFullResponse: true,
 						});
 
-						const binaryDataBuffer = Buffer.from(response.data);
+						const binaryDataBuffer = Buffer.from(response.body || response.data);
 						const { fileName, contentType } = extractMetadata(response.headers, fileUrl);
 
 						const uploadResponse = await performUpload.call(
