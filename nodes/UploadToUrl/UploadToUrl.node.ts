@@ -794,7 +794,9 @@ function extractMetadata(
 			if (filenameFromUrl && filenameFromUrl.includes('.')) {
 				fileName = filenameFromUrl;
 			}
-		} catch (e) {}
+		} catch {
+			/* URL parsing failed — use default filename */
+		}
 	}
 
 	return { fileName, contentType };
