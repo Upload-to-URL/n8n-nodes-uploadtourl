@@ -489,7 +489,7 @@ export class UploadToUrl implements INodeType {
 					const response = await this.helpers.httpRequest({
 						method: 'GET',
 						url: fileUrl,
-						encoding: null,
+						encoding: 'arraybuffer',
 						returnFullResponse: true,
 					});
 
@@ -532,7 +532,7 @@ export class UploadToUrl implements INodeType {
 						const response = await this.helpers.httpRequest({
 							method: 'GET',
 							url: fileUrl,
-							encoding: null,
+							encoding: 'arraybuffer',
 							returnFullResponse: true,
 						});
 
