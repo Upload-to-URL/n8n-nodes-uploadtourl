@@ -653,20 +653,30 @@ export class UploadToUrl implements INodeType {
 						for (const propertyName of propertyNames) {
 							try {
 								const binaryDataVal = itemBinaryData[propertyName];
-								const binaryFiles = Array.isArray(binaryDataVal) ? binaryDataVal : [binaryDataVal];
+								if (!binaryDataVal) continue;
 
-								for (const binaryData of binaryFiles) {
-									// Support for both standard metadata objects and potential array elements
-									const fileName = binaryData.fileName ?? 'file';
-									const contentType = binaryData.mimeType;
+								const binaryFiles = Array.isArray(binaryDataVal) ? binaryDataVal : [binaryDataVal];
+								const isStandardSingle = !Array.isArray(binaryDataVal);
+
+								for (let j = 0; j < binaryFiles.length; j++) {
+									const binaryData = binaryFiles[j];
+									const fileName = binaryData.fileName ?? (binaryFiles.length > 1 ? `file_${j}` : 'file');
+									const contentType = binaryData.mimeType || 'application/octet-stream';
 									let binaryDataBuffer: Buffer;
 
-									if (binaryData.data && typeof binaryData.data === 'string') {
-										// If data is already there (base64)
-										binaryDataBuffer = Buffer.from(binaryData.data, 'base64');
-									} else {
-										// Fallback to helper (works for both standard properties and handles most cases)
+									if (isStandardSingle) {
+										// Standard n8n property: use helper for external storage support
 										binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, propertyName);
+									} else {
+										// Custom array of files (e.g. from Code node): use internal data
+										if (binaryData.data && typeof binaryData.data === 'string') {
+											binaryDataBuffer = Buffer.from(binaryData.data, 'base64');
+										} else if (binaryData.data && Buffer.isBuffer(binaryData.data)) {
+											binaryDataBuffer = binaryData.data;
+										} else {
+											// Fallback for cases where data might be missing but property is valid
+											binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, propertyName);
+										}
 									}
 
 									const response = await performUpload.call(
