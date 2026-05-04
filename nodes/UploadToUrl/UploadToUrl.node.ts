@@ -643,14 +643,12 @@ export class UploadToUrl implements INodeType {
 										});
 									}
 								} catch (error) {
-									uploadResults.push({
-										property: propertyName,
-										error: (error as Error).message,
-									});
+									// Let upload errors reach the existing outer catch
+									throw error;
 								}
 							}
 
-							if (uploadResults.length === 1 && !uploadResults[0].error) {
+							if (uploadResults.length === 1) {
 								returnData.push({
 									json: uploadResults[0].data,
 									pairedItem: i,
@@ -791,10 +789,8 @@ export class UploadToUrl implements INodeType {
 									});
 								}
 							} catch (error) {
-								uploadResults.push({
-									property: propertyName,
-									error: (error as Error).message,
-								});
+								// Let upload errors reach the existing outer catch
+								throw error;
 							}
 						}
 
