@@ -570,9 +570,6 @@ export class UploadToUrl implements INodeType {
 						});
 					} else if (operation === 'upload') {
 						const inputType = this.getNodeParameter('inputType', i) as string;
-						let binaryDataBuffer: Buffer;
-						let fileName: string;
-						let contentType: string;
 
 						if (inputType === 'binary') {
 							const uploadAllBinary = this.getNodeParameter('uploadAllBinary', i, true) as boolean;
@@ -665,6 +662,10 @@ export class UploadToUrl implements INodeType {
 								});
 							}
 						} else {
+							let binaryDataBuffer: Buffer;
+							let fileName: string;
+							let contentType: string;
+
 							const base64Data = this.getNodeParameter('base64Data', i) as string;
 							fileName = this.getNodeParameter('fileName', i) as string;
 							const mimeTypeValue = this.getNodeParameter('mimeType', i) as string;
@@ -696,22 +697,20 @@ export class UploadToUrl implements INodeType {
 
 							const cleanBase64 = base64Data.replace(/^data:[^;]+;base64,/, '');
 							binaryDataBuffer = Buffer.from(cleanBase64, 'base64');
-						}
 
-						const uploadResponse = await performUpload.call(
-							this,
-							binaryDataBuffer,
-							fileName,
-							contentType,
-							expiryDaysValue,
-						);
-						returnData.push({
-							json:
-								typeof uploadResponse === 'string'
-									? JSON.parse(uploadResponse)
-									: uploadResponse,
-							pairedItem: i,
-						});
+							const uploadResponse = await performUpload.call(
+								this,
+								binaryDataBuffer,
+								fileName,
+								contentType,
+								expiryDaysValue,
+							);
+							
+							returnData.push({
+								json: typeof uploadResponse === 'string' ? JSON.parse(uploadResponse) : uploadResponse,
+								pairedItem: i,
+							});
+						}
 					} else {
 						// uploadMultiple
 						const selectionMode = this.getNodeParameter('selectionMode', i) as string;
