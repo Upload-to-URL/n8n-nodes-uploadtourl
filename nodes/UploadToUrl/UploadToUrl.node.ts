@@ -145,6 +145,19 @@ export class UploadToUrl implements INodeType {
 				},
 			},
 			{
+				displayName: 'Upload All Binary Data',
+				name: 'uploadAllBinary',
+				type: 'boolean',
+				default: true,
+				displayOptions: {
+					show: {
+						operation: ['upload'],
+						inputType: ['binary'],
+					},
+				},
+				description: 'Whether to automatically upload every binary property found in the item',
+			},
+			{
 				displayName: 'Binary Property',
 				name: 'binaryPropertyName',
 				type: 'string',
@@ -153,6 +166,7 @@ export class UploadToUrl implements INodeType {
 					show: {
 						operation: ['upload'],
 						inputType: ['binary'],
+						uploadAllBinary: [false],
 					},
 				},
 				required: true,
@@ -561,11 +575,95 @@ export class UploadToUrl implements INodeType {
 						let contentType: string;
 
 						if (inputType === 'binary') {
-							const binaryPropertyName = this.getNodeParameter('binaryPropertyName', i) as string;
-							const binaryData = this.helpers.assertBinaryData(i, binaryPropertyName);
-							binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
-							fileName = binaryData.fileName ?? 'file';
-							contentType = binaryData.mimeType;
+							const uploadAllBinary = this.getNodeParameter('uploadAllBinary', i, true) as boolean;
+							
+							const itemBinaryData = items[i].binary;
+							if (!itemBinaryData) {
+								throw new NodeOperationError(this.getNode(), 'No binary data found in item', {
+									itemIndex: i,
+								});
+							}
+
+							let propertyNames: string[] = [];
+							if (uploadAllBinary) {
+								propertyNames = Object.keys(itemBinaryData);
+							} else {
+								propertyNames = [this.getNodeParameter('binaryPropertyName', i) as string];
+							}
+
+							if (propertyNames.length === 0) {
+								returnData.push({
+									json: { message: 'No binary properties found' },
+									pairedItem: i,
+								});
+								continue;
+							}
+
+							const uploadResults = [];
+							for (const propertyName of propertyNames) {
+								try {
+									const binaryDataVal = itemBinaryData[propertyName];
+									if (!binaryDataVal) {
+										if (!uploadAllBinary) {
+											throw new NodeOperationError(this.getNode(), `Binary property ${propertyName} not found`);
+										}
+										continue;
+									}
+
+									const binaryFiles = Array.isArray(binaryDataVal) ? binaryDataVal : [binaryDataVal];
+									const isStandardSingle = !Array.isArray(binaryDataVal);
+
+									for (let j = 0; j < binaryFiles.length; j++) {
+										const binaryData = binaryFiles[j];
+										const fileName = binaryData.fileName ?? (binaryFiles.length > 1 ? `file_${j}` : 'file');
+										const contentType = binaryData.mimeType || 'application/octet-stream';
+										let binaryDataBuffer: Buffer;
+
+										if (isStandardSingle) {
+											binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, propertyName);
+										} else {
+											if (binaryData.data && typeof binaryData.data === 'string') {
+												binaryDataBuffer = Buffer.from(binaryData.data, 'base64');
+											} else if (binaryData.data && Buffer.isBuffer(binaryData.data)) {
+												binaryDataBuffer = binaryData.data;
+											} else {
+												binaryDataBuffer = await this.helpers.getBinaryDataBuffer(i, propertyName);
+											}
+										}
+
+										const response = await performUpload.call(
+											this,
+											binaryDataBuffer,
+											fileName,
+											contentType,
+											expiryDaysValue,
+										);
+										
+										uploadResults.push({
+											property: propertyName,
+											fileName,
+											data: typeof response === 'string' ? JSON.parse(response) : response,
+										});
+									}
+								} catch (error) {
+									uploadResults.push({
+										property: propertyName,
+										error: (error as Error).message,
+									});
+								}
+							}
+
+							if (uploadResults.length === 1 && !uploadResults[0].error) {
+								returnData.push({
+									json: uploadResults[0].data,
+									pairedItem: i,
+								});
+							} else {
+								returnData.push({
+									json: { results: uploadResults },
+									pairedItem: i,
+								});
+							}
 						} else {
 							const base64Data = this.getNodeParameter('base64Data', i) as string;
 							fileName = this.getNodeParameter('fileName', i) as string;
